@@ -1,0 +1,32 @@
+{
+  "name": "instant-runoff",
+  "version": "0.1.0",
+  "authors": [
+    "Erik Youngren <erik@youngren.us>"
+  ],
+  "description": "Vote and calculate a winner using the alternative/instant-runoff method.",
+  "keywords": [
+    "web-component",
+    "polymer",
+    "seed"
+  ],
+  "main": "instant-runoff.html",
+  "license": "http://polymer.github.io/LICENSE.txt",
+  "homepage": "https://github.com/Artanis/seed-element/",
+  "ignore": [
+    "/.*",
+    "/test/"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.1.0",
+    "Sortable": "rubaxa/Sortable#~1.4.2",
+    "lodash": "^3.7.0"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "web-component-tester": "*",
+    "paper-material": "PolymerElements/paper-material#~1.0.6",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#~1.2.3",
+    "google-chart": "GoogleWebComponents/google-chart#~1.0.4"
+  }
+}

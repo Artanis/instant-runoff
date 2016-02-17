@@ -1,0 +1,155 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<script src="../lodash/lodash.js"></script>
+
+<!--
+Transforms poll data into a data structure compatable with `<google-chart>`.
+
+Currently supports the `bar chart` type, with each segment in a group
+representing the additional votes from that round of runoffs. The
+`stacked bar chart` type is recommended.
+
+Further chart types to come.
+
+Example:
+
+    <instant-runoff
+      candidates="{{candidates}}"
+      ballots="{{ballots}}"
+      winner="{{winner}}"
+      results="{{results}}">
+    </instant-runoff>
+
+    <instant-chart
+      poll-data="{{results}}"
+      cols="{{cols}}"
+      stacked-bar-chart="{{chartdata}}">
+    </instant-chart>
+
+    <google-chart
+      cols="{{cols}}"
+      data="{{chartdata}}"
+      options='{"isStacked": true}'>
+    </google-chart>
+
+@group Seed Elements
+@element instant-chart
+@demo demo/index.html
+
+-->
+<dom-module id="instant-chart">
+  <script>
+    Polymer({
+      is: 'instant-chart',
+
+      properties: {
+        /**
+         * Poll results array from `instand-runoff`.
+         *
+         * An array of dictionaries mapping candidates to their vote counts
+         * in each round.
+         */
+        pollData: {
+          type: Array,
+          notify: true
+        },
+
+        /**
+         * The graph columns.
+         */
+        cols: {
+          computed: "_buildCols(pollData)",
+          notify: true
+        },
+
+        /**
+         * Results of the election as a standard bar chart.
+         *
+         * Not yet implemented!
+         */
+        barChart: {
+          computed: "_transformBarChart(groupedBarChart)",
+          notify: true,
+        },
+
+        /**
+         * Poll results as a stacked bar chart.
+         *
+         * Each column shows the _new_ votes recieved that round.
+         */
+        stackedBarChart: {
+          computed: "_transformStackedBarChart(groupedBarChart)",
+          notify: true
+        },
+
+        /**
+         * Poll results as a grouped bar chart.
+         *
+         * Each column shows the _total_ votes recieved for each
+         * candidate that round.
+         */
+        groupedBarChart: {
+          computed: "_transformGroupedBarChart(pollData)",
+          notify: true
+        }
+      },
+
+      _buildRows: function(pollData) {
+        var r = _.first(pollData);
+
+        return _.map(Object.keys(r), function(candidate) {
+          return [candidate];
+        });
+      },
+
+      _buildCols: function(pollData) {
+        console.log(pollData);
+        var cols = []
+        cols.push({label: "Candidates", type: "string"});
+        _.times(pollData.length, function(i) {
+          cols.push({label: "R"+(i+1), type: "number"});
+        });
+
+        return cols;
+      },
+
+      _transformGroupedBarChart: function(pollData) {
+        console.log("Making grouped bar-chart data!");
+        var rows = this._buildRows(pollData);
+
+        _.forEach(pollData, function(round) {
+          _.forEach(round, function(votes, candidate) {
+            var row = _.find(rows, function(row) {
+              return row[0] === candidate;
+            });
+            row.push(votes);
+          });
+        });
+
+        return rows;
+      },
+
+      _transformBarChart: function(groupedBarChart) {
+
+      },
+
+      _transformStackedBarChart: function(groupedBarChart) {
+        console.log("Converting grouped bar-chart data to stacked!");
+        var rows = _.clone(groupedBarChart, true);
+        rows = _.map(rows, function(row) {
+          var candidate = row.shift();
+          var row = _.map(row, function(value, index, collection) {
+            if(index < 1 || value === 0) {
+              return value;
+            } else {
+              return value - collection[index-1];
+            }
+          });
+          row.unshift(candidate);
+          return row;
+        });
+        return rows;
+      }
+    });
+  </script>
+</dom-module>

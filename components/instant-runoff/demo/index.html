@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <title>instant-runoff Demo</title>
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../lodash/lodash.js"></script>
+    <link rel="import" href="../../iron-flex-layout/classes/iron-flex-layout.html">
+    <link rel="import" href="../../paper-material/paper-material.html">
+    <link rel="import" href="../../Sortable/Sortable.html">
+    <link rel="import" href="../../google-chart/google-chart.html">
+
+    <link rel="import" href="../instant-runoff.html">
+    <link rel="import" href="../instant-chart.html">
+    <style media="screen">
+      google-chart {
+        height: 600px;
+        width: 800px;
+      }
+
+      .ballot {
+        width: 7.5em;
+      }
+
+      .candidate {
+        margin: 0.25em;
+        padding: 0.25em;
+      }
+
+      .drop-target {
+        /*background-color: lightgray;*/
+        border: 3px dashed lightgray;
+        padding: 0.25em;
+        margin: 0.25em;
+        min-height: 1em;
+      }
+
+      .guide {
+        border: 1px dotted lightgray;
+        padding: 0.25em;
+        margin: 0.25em;
+        text-align: center;
+      }
+
+      .prefered .candidate {
+        background-color: white;
+      }
+
+      .not-prefered .candidate {
+        background-color: white;
+      }
+    </style>
+  </head>
+  <body unresolved>
+
+    <template is="dom-bind" id="app">
+
+      <div id="results">
+        <span>{{winner}}</span>
+        <instant-runoff id="runoff"
+          candidates="{{candidates}}"
+          ballots="{{ballots}}"
+          winner="{{winner}}"
+          results="{{results}}"></instant-runoff>
+      </div>
+
+      <div id="results-chart">
+        <instant-chart
+          poll-data="{{results}}"
+          cols="{{cols}}"
+          stacked-bar-chart="{{stackedRows}}"></instant-chart>
+
+        <google-chart id="chart"
+          type="bar",
+          cols="{{cols}}"
+          rows="{{stackedRows}}"
+          options="{{stacked}}">
+        </google-chart>
+      </div>
+
+      <div id="ballots" class="flex layout horizontal wrap">
+        <template is="dom-repeat" items="{{ballots}}" as="ballot">
+          <div class="ballot layout vertical">
+            <div class="prefered layout vertical">
+              <div class="guide">Prefered</div>
+              <sortable-js group="{{ballot.key}}" class="drop-target flex layout vertical">
+                <template is="dom-repeat" items="{{ballot.prefers}}" as="candidate" on-items-changed="ballotsChanged">
+                  <paper-material elevation="2" class="candidate">{{candidate}}</paper-material>
+                </template>
+              </sortable-js>
+            </div>
+            <div class="not-prefered layout vertical flex">
+              <div class="guide">Not Prefered</div>
+              <sortable-js group="{{ballot.key}}" sort="false" class="drop-target layout horizontal wrap">
+                <template is="dom-repeat" items="{{ballot.omitted}}" as="candidate" on-items-changed="ballotsChanged">
+                  <paper-material elevation="2" class="candidate">{{candidate}}</paper-material>
+                </template>
+              </sortable-js>
+            </div>
+          </div>
+        </template>
+      </div>
+
+    </template>
+
+    <script type="text/javascript">
+      var app = document.querySelector("#app");
+
+      app.ballotsChanged = function(evt, detail) {
+        console.log(evt, detail);
+        // evt.srcElement.render();
+      };
+
+      app.candidates = [
+        "Rat", "Ox", "Tiger", "Rabbit",
+        "Dragon", "Snake", "Horse", "Goat",
+        "Monkey", "Rooster", "Dog", "Pig",
+        "Cat"
+      ];
+
+      var n = Math.ceil(app.candidates.length/1.5); n=0;
+      var ballotFactory = function(candidates, pick) {
+        var ballot = {
+          key: _.uniqueId("ballot_"),
+          prefers: _.shuffle(_.sample(candidates, pick)),
+        };
+        ballot.omitted = _.shuffle(_.xor(candidates, ballot.prefers));
+
+        return ballot;
+      };
+      app.set("ballots", _.times(13, _.bind(ballotFactory, undefined, app.candidates, n)));
+
+      app.stacked = {
+        isStacked: "absolute",
+        animation: {
+          startup: true
+        },
+        hAxis: {
+          format: "decimal",
+          title: "Votes",
+          format: "decimal",
+          ticks: [{v: app.ballots.length/2, f:"50%"}]
+        },
+        vAxis: {
+          title: "Candidates"
+        }
+      };
+    </script>
+
+  </body>
+</html>
