@@ -1,0 +1,185 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<script src="../lodash/lodash.js"></script>
+
+<!--
+Calculates the result of an Instant Run-off/Alternative Vote election.
+
+Example:
+
+    <instant-runoff
+      candidates="{{candidates}}"
+      ballots="{{ballots}}"
+      winner="{{winner}}"
+      results="{{results}}">
+    </instant-runoff>
+
+@group Seed Elements
+@element instant-runoff
+@demo demo/index.html
+
+-->
+<dom-module id="instant-runoff"></dom-module>
+
+<script>
+
+  var NotYetImplementedError = function(message) {
+    Error.captureStackTrace(this);
+    this.name = "NotYetImplementedError";
+    this.message = message;
+  };
+  NotYetImplementedError.prototype = Object.create(Error.prototype);
+
+    Polymer({
+    is: 'instant-runoff',
+
+    properties: {
+      /**
+       * List of valid candidates in the election.
+       */
+      candidates: {
+        type: Array,
+      },
+
+      /**
+       * List of ballot objects.
+       *
+       * A ballot object is an object with an array `prefers`, containing the
+       * voter's preference for candidates in descending order (i.e.: the first
+       * candidate in the array is that voter's most prefered candidate).
+       */
+      ballots: {
+        type: Array,
+      },
+
+      /**
+       * The winning candidate.
+       */
+      winner: {
+        computed: "_findWinner(results)",
+        readOnly: true,
+        notify: true
+      },
+
+      /**
+       * The results of each round of the election.
+       *
+       * An array of dictionaries mapping candidates to the votes they
+       * recieved in that round.
+       */
+      results: {
+        type: Array,
+        readOnly: true,
+        notify: true
+      },
+    },
+
+    observers: [
+      "_ballotsChanged(candidates.*, ballots.*)",
+    ],
+
+    _ballotsChanged: function() {
+      this.run();
+    },
+
+    /**
+     * Manually run the election.
+     *
+     * Fails if `candidates` or `ballots` are undefined or if either array
+     * is empty.
+     */
+    run: function() {
+      if((this.candidates !== undefined && this.candidates.length > 0) && (this.ballots !== undefined && this.ballots.length > 0)) {
+        this._setResults(this._tallyBallots(this.candidates, this.ballots));
+      }
+    },
+
+    _tallyBallots: function(candidates, ballots) {
+      var findLosers = function(buckets, options) {
+        options = Object.assign({
+          deterministic: true
+        }, options);
+
+        var least_votes = _.min(_.filter(buckets, function (candidate) {
+          return candidate.viable && candidate.votes.length > 0;
+        }), "votes.length").votes.length;
+
+        var lost = _.filter(buckets, function(candidate) {
+          return candidate.votes.length < 1;
+        });
+
+        if(options.deterministic === true) {
+          throw new NotYetImplementedError("Deterministic elimination not yet implemented.");
+        } else {
+          lost.push(_.sample(_.filter(buckets, function(candidate) {
+            return candidate.votes.length === least_votes;
+          })));
+        }
+
+        return lost;
+      };
+
+      // Don't run if there are no votes.
+      if(!_.some(ballots, "prefers.length")) {
+        return undefined;
+      };
+
+      var results = [];
+      var dropout = [];
+
+      do {
+        var buckets = _.map(candidates, function(name) {
+          return {name:name, votes:Array(), viable: !_.includes(dropout, name)};
+        });
+
+        _.forEach(ballots, function(ballot) {
+          for(var preference in ballot.prefers) {
+            var preference = ballot.prefers[preference];
+            var candidate = _.find(buckets, {name: preference});
+
+            if(candidate.viable === true) {
+              // console.log("Round", results.length+1, ballot.key, "for", preference);
+              candidate.votes.push(ballot);
+              break;
+            } else {
+              // console.log("Round", results.length+1, ballot.key, "miss", preference);
+            }
+          }
+        });
+
+        var round_result = _.zipObject(_.map(buckets, function(bucket) {
+          return [bucket.name, bucket.votes.length];
+        }));
+
+        var lost = findLosers(buckets, {deterministic: false});
+        dropout = _.union(dropout, _.map(lost, "name"));
+        // _.forEach(lost, function(candidate) {
+        //   dropout.push(candidate.name);
+        // });
+        console.log("Lost: ", dropout.join(", "));
+        results.push(round_result);
+
+      } while(this._findWinner(results) === undefined);
+
+      console.log(results);
+      return results;
+    },
+
+    /**
+     * Extract the winning candidate from the results.
+     */
+    _findWinner: function(results) {
+      if(results.length > 0) {
+        last_round = _.last(results);
+        total_votes = _.reduce(last_round, function(total, value, key) {
+          return total + value;
+        });
+
+        return _.findKey(last_round, function(value, key) {
+          return (value / total_votes) > 0.5;
+        });
+      }
+    }
+  });
+
+</script>
