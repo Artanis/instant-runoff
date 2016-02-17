@@ -20,13 +20,13 @@
   "dependencies": {
     "polymer": "Polymer/polymer#^1.1.0",
     "Sortable": "rubaxa/Sortable#~1.4.2",
-    "paper-material": "PolymerElements/paper-material#~1.0.6",
-    "google-chart": "GoogleWebComponents/google-chart#~1.0.4",
-    "iron-flex-layout": "PolymerElements/iron-flex-layout#~1.2.3",
     "lodash": "^3.7.0"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
-    "web-component-tester": "*"
+    "web-component-tester": "*",
+    "paper-material": "PolymerElements/paper-material#~1.0.6",
+    "iron-flex-layout": "PolymerElements/iron-flex-layout#~1.2.3",
+    "google-chart": "GoogleWebComponents/google-chart#~1.0.4"
   }
 }
